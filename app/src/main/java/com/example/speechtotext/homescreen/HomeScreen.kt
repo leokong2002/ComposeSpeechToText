@@ -1,9 +1,11 @@
 package com.example.speechtotext.homescreen
 
 import android.Manifest
+import android.app.Activity
 import android.content.Intent
 import android.net.Uri
 import android.provider.Settings
+import android.speech.RecognizerIntent
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
@@ -13,10 +15,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
@@ -28,6 +28,7 @@ import com.example.speechtotext.ui.composable.AlertDialog
 import com.example.speechtotext.ui.composable.SpeechToTextDialog
 import com.example.speechtotext.ui.composable.Tile
 import com.example.speechtotext.ui.theme.Theme
+import java.util.Locale
 
 @Composable
 fun HomeScreen(
@@ -37,6 +38,8 @@ fun HomeScreen(
     val context = LocalContext.current
     val state = viewModel.observeWithoutActions()
     val onHandleEvent: (HomeViewModel.UiEvent) -> Unit = viewModel::handleEvent
+    val speechToTextResultOne = remember { mutableStateOf("Your result will be displayed here") }
+    val speechToTextResultTwo = remember { mutableStateOf("Your result will be displayed here") }
     val microphoneContract = rememberLauncherForActivityResult(contract = ActivityResultContracts.RequestPermission()) { isGranted ->
         if (isGranted) {
             onHandleEvent(HomeViewModel.UiEvent.DisplaySpeechToTextDialog)
@@ -44,7 +47,15 @@ fun HomeScreen(
             onHandleEvent(HomeViewModel.UiEvent.DisplayPermissionDialog)
         }
     }
-    var speechToTextResult by remember { mutableStateOf("Your result will be displayed here") }
+    val defaultSpeechToTextLauncher = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) {
+        if (it.resultCode == Activity.RESULT_OK) {
+            val data = it.data
+            val result = data?.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS)
+            speechToTextResultOne.value = result?.get(0) ?: "Error..."
+        } else {
+            speechToTextResultOne.value = "Error..."
+        }
+    }
 
     Column(
         verticalArrangement = Arrangement.spacedBy(space = 16.dp),
@@ -56,18 +67,19 @@ fun HomeScreen(
     ) {
         Tile(
             title = "Default Google Dialog",
-            subtitle = "Not Implemented",
-            onClick = {},
+            subtitle = speechToTextResultOne.value,
+            onClick = {
+                val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH)
+                intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
+                intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE, Locale.getDefault())
+                intent.putExtra(RecognizerIntent.EXTRA_PROMPT, "Listening...")
+                defaultSpeechToTextLauncher.launch(intent)
+            },
         )
         Tile(
             title = "Custom Dialog",
-            subtitle = speechToTextResult,
+            subtitle = speechToTextResultTwo.value,
             onClick = { microphoneContract.launch(Manifest.permission.RECORD_AUDIO) },
-        )
-        Tile(
-            title = "No Dialog",
-            subtitle = "Not Implemented",
-            onClick = {},
         )
     }
 
@@ -75,7 +87,7 @@ fun HomeScreen(
         state.shouldDisplaySpeechToTextDialog -> {
             SpeechToTextDialog(
                 onDismissRequest = { onHandleEvent(HomeViewModel.UiEvent.DismissSpeechToTextDialog) },
-                onSpeechToTextResult = { speechToTextResult = it }
+                onSpeechToTextResult = { speechToTextResultTwo.value = it }
             )
         }
         state.shouldDisplayPermissionDialog -> {
