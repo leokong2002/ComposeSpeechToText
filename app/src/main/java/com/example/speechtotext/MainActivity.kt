@@ -8,7 +8,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
 import androidx.compose.ui.Modifier
-import com.example.speechtotext.ui.composable.HomeScreen
+import com.example.speechtotext.homescreen.HomeScreen
 import com.example.speechtotext.ui.theme.Theme
 
 class MainActivity : ComponentActivity() {

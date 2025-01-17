@@ -1,4 +1,4 @@
-package com.example.speechtotext.ui.composable
+package com.example.speechtotext.homescreen
 
 import com.example.speechtotext.base.BaseViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
