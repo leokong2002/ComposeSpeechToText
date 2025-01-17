@@ -1,15 +1,8 @@
 package com.example.speechtotext.homescreen
 
-import com.example.speechtotext.base.BaseViewModel
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.update
+import com.example.speechtotext.base.SimpleViewModel
 
-class HomeViewModel : BaseViewModel<HomeViewModel.UiState, Nothing, HomeViewModel.UiEvent>() {
-
-    private val _state = MutableStateFlow(UiState())
-    override val state: StateFlow<UiState> = _state.asStateFlow()
+class HomeViewModel : SimpleViewModel<HomeViewModel.UiState, Nothing, HomeViewModel.UiEvent>(UiState()) {
 
     override fun handleEvent(event: UiEvent) {
         when (event) {
@@ -18,10 +11,6 @@ class HomeViewModel : BaseViewModel<HomeViewModel.UiState, Nothing, HomeViewMode
             is UiEvent.DisplayPermissionDialog -> updateState { it.copy(shouldDisplayPermissionDialog = true) }
             is UiEvent.DismissPermissionDialog -> updateState { it.copy(shouldDisplayPermissionDialog = false) }
         }
-    }
-
-    private fun updateState(update: (UiState) -> UiState) {
-        _state.update(update)
     }
 
     data class UiState(

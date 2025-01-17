@@ -4,8 +4,11 @@ import android.Manifest
 import android.app.Activity
 import android.content.Intent
 import android.net.Uri
+import android.os.Bundle
 import android.provider.Settings
+import android.speech.RecognitionListener
 import android.speech.RecognizerIntent
+import android.speech.SpeechRecognizer
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
@@ -15,6 +18,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
@@ -36,13 +40,40 @@ fun HomeScreen(
     viewModel: HomeViewModel = viewModel(),
 ) {
     val context = LocalContext.current
+    val speechRecognizer = SpeechRecognizer.createSpeechRecognizer(context)
+    val speechRecognizerIntent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH)
     val state = viewModel.observeWithoutActions()
     val onHandleEvent: (HomeViewModel.UiEvent) -> Unit = viewModel::handleEvent
     val speechToTextResultOne = remember { mutableStateOf("Your result will be displayed here") }
     val speechToTextResultTwo = remember { mutableStateOf("Your result will be displayed here") }
-    val microphoneContract = rememberLauncherForActivityResult(contract = ActivityResultContracts.RequestPermission()) { isGranted ->
+    val speechToTextResultThree = remember { mutableStateOf("Your result will be displayed here") }
+    val customDialogMicrophoneContract = rememberLauncherForActivityResult(contract = ActivityResultContracts.RequestPermission()) { isGranted ->
         if (isGranted) {
             onHandleEvent(HomeViewModel.UiEvent.DisplaySpeechToTextDialog)
+        } else {
+            onHandleEvent(HomeViewModel.UiEvent.DisplayPermissionDialog)
+        }
+    }
+    val noDialogMicrophoneContract = rememberLauncherForActivityResult(contract = ActivityResultContracts.RequestPermission()) { isGranted ->
+        if (isGranted) {
+            speechRecognizer.setRecognitionListener(object : RecognitionListener {
+                override fun onReadyForSpeech(p0: Bundle?) {}
+                override fun onBeginningOfSpeech() {}
+                override fun onBufferReceived(p0: ByteArray?) {}
+                override fun onEndOfSpeech() {}
+                override fun onPartialResults(p0: Bundle?) {}
+                override fun onEvent(p0: Int, p1: Bundle?) {}
+                override fun onRmsChanged(p0: Float) {}
+                override fun onError(p0: Int) {
+                    speechToTextResultThree.value = "Error..."
+                }
+
+                override fun onResults(p0: Bundle?) {
+                    val result = p0?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)
+                    speechToTextResultThree.value = result?.firstOrNull() ?: "Error..."
+                }
+            })
+            speechRecognizer.startListening(speechRecognizerIntent)
         } else {
             onHandleEvent(HomeViewModel.UiEvent.DisplayPermissionDialog)
         }
@@ -79,13 +110,20 @@ fun HomeScreen(
         Tile(
             title = "Custom Dialog",
             subtitle = speechToTextResultTwo.value,
-            onClick = { microphoneContract.launch(Manifest.permission.RECORD_AUDIO) },
+            onClick = { customDialogMicrophoneContract.launch(Manifest.permission.RECORD_AUDIO) },
+        )
+        Tile(
+            title = "No Dialog",
+            subtitle = speechToTextResultThree.value,
+            onClick = { noDialogMicrophoneContract.launch(Manifest.permission.RECORD_AUDIO) },
         )
     }
 
     when {
         state.shouldDisplaySpeechToTextDialog -> {
             SpeechToTextDialog(
+                speechRecognizer = speechRecognizer,
+                speechRecognizerIntent = speechRecognizerIntent,
                 onDismissRequest = { onHandleEvent(HomeViewModel.UiEvent.DismissSpeechToTextDialog) },
                 onSpeechToTextResult = { speechToTextResultTwo.value = it }
             )
@@ -101,6 +139,10 @@ fun HomeScreen(
                 onLocationDialogDismissClick = { onHandleEvent(HomeViewModel.UiEvent.DismissPermissionDialog) },
             )
         }
+    }
+
+    DisposableEffect(Unit) {
+        onDispose { speechRecognizer.destroy() }
     }
 }
 

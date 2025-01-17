@@ -3,7 +3,6 @@ package com.example.speechtotext.ui.composable
 import android.content.Intent
 import android.os.Bundle
 import android.speech.RecognitionListener
-import android.speech.RecognizerIntent
 import android.speech.SpeechRecognizer
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
@@ -35,7 +34,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextAlign
@@ -50,13 +48,12 @@ private const val PulseFractionMultiplier = 0.1f
 
 @Composable
 fun SpeechToTextDialog(
+    speechRecognizer: SpeechRecognizer,
+    speechRecognizerIntent: Intent,
     onDismissRequest: () -> Unit,
     onSpeechToTextResult: (String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val context = LocalContext.current
-    val speechRecognizer = SpeechRecognizer.createSpeechRecognizer(context)
-    val speechRecognizerIntent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH)
     var amplitude by remember { mutableFloatStateOf(0f) }
     var hasError by remember { mutableStateOf(false) }
 
@@ -77,8 +74,8 @@ fun SpeechToTextDialog(
 
         override fun onResults(p0: Bundle?) {
             val result = p0?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)
-            result?.firstOrNull()?.let { searchTerm ->
-                onSpeechToTextResult(searchTerm)
+            result?.firstOrNull()?.let { result ->
+                onSpeechToTextResult(result)
                 onDismissRequest()
             } ?: run { hasError = true }
         }
