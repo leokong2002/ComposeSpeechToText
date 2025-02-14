@@ -1,4 +1,4 @@
-This is the example of speech to text with Jetpack Compose
+This is the example of speech to text with Jetpack Compose and MVVM
 
 1. Speech to text with the default dialog (not implemented)
 2. Speech to text with a custom dialog with pulse animation
