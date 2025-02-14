@@ -25,9 +25,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.speechtotext.BuildConfig
-import com.example.speechtotext.base.observeWithoutActions
 import com.example.speechtotext.ui.composable.AlertDialog
 import com.example.speechtotext.ui.composable.SpeechToTextDialog
 import com.example.speechtotext.ui.composable.Tile
@@ -42,7 +42,7 @@ fun HomeScreen(
     val context = LocalContext.current
     val speechRecognizer = SpeechRecognizer.createSpeechRecognizer(context)
     val speechRecognizerIntent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH)
-    val state = viewModel.observeWithoutActions()
+    val state = viewModel.state.collectAsStateWithLifecycle().value
     val onHandleEvent: (HomeViewModel.UiEvent) -> Unit = viewModel::handleEvent
     val speechToTextResultOne = remember { mutableStateOf("Your result will be displayed here") }
     val speechToTextResultTwo = remember { mutableStateOf("Your result will be displayed here") }
@@ -90,7 +90,6 @@ fun HomeScreen(
 
     Column(
         verticalArrangement = Arrangement.spacedBy(space = 16.dp),
-
         modifier = modifier
             .fillMaxSize()
             .padding(horizontal = 16.dp, vertical = 16.dp)

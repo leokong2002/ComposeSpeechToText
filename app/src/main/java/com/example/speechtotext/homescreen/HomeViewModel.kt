@@ -1,15 +1,21 @@
 package com.example.speechtotext.homescreen
 
-import com.example.speechtotext.base.SimpleViewModel
+import androidx.lifecycle.ViewModel
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 
-class HomeViewModel : SimpleViewModel<HomeViewModel.UiState, Nothing, HomeViewModel.UiEvent>(UiState()) {
+class HomeViewModel : ViewModel() {
 
-    override fun handleEvent(event: UiEvent) {
+    private val _state = MutableStateFlow(UiState())
+    val state = _state.asStateFlow()
+
+    fun handleEvent(event: UiEvent) {
         when (event) {
-            is UiEvent.DisplaySpeechToTextDialog -> updateState { it.copy(shouldDisplaySpeechToTextDialog = true) }
-            is UiEvent.DismissSpeechToTextDialog -> updateState { it.copy(shouldDisplaySpeechToTextDialog = false) }
-            is UiEvent.DisplayPermissionDialog -> updateState { it.copy(shouldDisplayPermissionDialog = true) }
-            is UiEvent.DismissPermissionDialog -> updateState { it.copy(shouldDisplayPermissionDialog = false) }
+            is UiEvent.DisplaySpeechToTextDialog -> _state.update { it.copy(shouldDisplaySpeechToTextDialog = true) }
+            is UiEvent.DismissSpeechToTextDialog -> _state.update { it.copy(shouldDisplaySpeechToTextDialog = false) }
+            is UiEvent.DisplayPermissionDialog -> _state.update { it.copy(shouldDisplayPermissionDialog = true) }
+            is UiEvent.DismissPermissionDialog -> _state.update { it.copy(shouldDisplayPermissionDialog = false) }
         }
     }
 
